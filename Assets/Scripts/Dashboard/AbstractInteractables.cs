@@ -535,7 +535,7 @@ namespace JulyJam.Interactables
 				//Scale the value down to a usable value for the raw value of the lever.
 				float x = Slider.DistanceDotProduct(target.transform, transform.parent, transform.parent.forward) * sensitivity;
 				float y = Slider.DistanceDotProduct(target.transform, transform.parent, transform.parent.right) * sensitivity;
-				RawValue = new Vector3(x, y).normalized;
+				RawValue = new Vector2(x, y).normalized;
 
 				yield return null;
 			}
