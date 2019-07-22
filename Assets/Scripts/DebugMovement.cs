@@ -6,7 +6,9 @@ public class DebugMovement : MonoBehaviour
 {
 
     private Rigidbody rigid;
-    public float speed = 10;
+    public float walkSpeed = 5;
+    public float runSpeed = 10;
+    private float speed = 10;
 
     // Start is called before the first frame update
     void Start()
@@ -17,6 +19,7 @@ public class DebugMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        rigid.velocity = new Vector3(Input.GetAxis("Horizontal"),0, Input.GetAxis("Vertical")).normalized * speed;
+        speed = Input.GetKey(KeyCode.Mouse0) ? runSpeed : (Input.GetKey(KeyCode.Mouse1) ? 1 : walkSpeed);
+        rigid.velocity = (transform.forward * Input.GetAxis("Vertical") + transform.right * Input.GetAxis("Horizontal")).normalized * speed;
     }
 }

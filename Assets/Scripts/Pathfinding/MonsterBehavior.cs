@@ -33,14 +33,29 @@ public class MonsterBehavior : MonoBehaviour
         pfNodes = FindObjectsOfType<PathfindingNode>();
         TreeNode chasing = new LeafNode(PlayerSeenTest, ChasingBehavior, defaultFailure);
         TreeNode patroling = new LeafNode(AlwaysTrue, PatrollingBehavior, defaultFailure);
-        //TreeNode listening = new LeafNode();
+        TreeNode listening = new LeafNode(PlayerHeardTest, defaultSuccess, defaultFailure);
         TreeNode searching = new LeafNode(AtTargetLocation, defaultSuccess, defaultFailure);
-        //TreeNode root = new SelectorNode(new TreeNode[4] { chasing, heard, investigating, patroling });
-        TreeNode root = new SelectorNode(new TreeNode[3] { chasing, searching, patroling });
+        TreeNode root = new SelectorNode(new TreeNode[4] { chasing, listening, searching, patroling });
         
         
         tree = new BT(root);
         StartCoroutine(tree.Tick());
+    }
+
+    IEnumerator PlayerHeardTest(Action<BTEvaluationResult> callback) {
+        Vector3 toPlayerVec = player.transform.position - transform.position;
+        //TODO: the rigidbody test is mostly for debug. redo when a more definitive system is found
+        if (toPlayerVec.magnitude < listeningDistance && player.GetComponent<Rigidbody>().velocity.magnitude > 1)
+        {
+            agent.SetDestination(transform.position);
+            yield return new WaitForSeconds(0.25f);
+            lastPlayerLocation = player.transform.position;
+            agent.SetDestination(lastPlayerLocation);
+            callback(BTEvaluationResult.Success);
+        } else {
+            callback(BTEvaluationResult.Continue);
+        }
+
     }
 
     IEnumerator PlayerSeenTest(Action<BTEvaluationResult> callback)
@@ -48,7 +63,7 @@ public class MonsterBehavior : MonoBehaviour
         Vector3 toPlayerVec = player.transform.position - transform.position;
         toPlayerVec.y = 0;
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, toPlayerVec.normalized, out hit, sightDistance, seeableObject)) {
+        if (Physics.Raycast(transform.position, toPlayerVec.normalized, out hit, sightDistance, seeableObject)) { 
 
             if (hit.transform.gameObject == player 
                     && (Vector3.Angle(transform.forward, toPlayerVec) < sightAngle / 2 
