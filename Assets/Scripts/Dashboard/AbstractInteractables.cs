@@ -6,10 +6,19 @@ namespace JulyJam.Interactables
 {
 	public delegate void InteractableEventHandler(MonoBehaviour sender);
 	public delegate void ValueChangeHandler(MonoBehaviour sender, object value);
+	/// <summary>
+	/// The possibles hands that are being tracked by an interactable.
+	/// </summary>
 	public enum TargetHand { None, Right, Left }
 
 	#region Buttons
+	/// <summary>
+	/// The possible interaction states for the button.
+	/// </summary>
 	public enum ButtonState { Released, Pressed }
+	/// <summary>
+	/// The possible output states for the button.
+	/// </summary>
 	public enum ButtonOutput { Inactive, Active }
 
 	/// <summary>
@@ -18,14 +27,20 @@ namespace JulyJam.Interactables
 	public abstract class Button : MonoBehaviour
 	{
 		//Events sent to all interested in the button state
+		/// <summary>Called when the button is released.</summary>
 		public event InteractableEventHandler ButtonUp = delegate { };
+		/// <summary>Called when the button is pressed down.</summary>
 		public event InteractableEventHandler ButtonDown = delegate { };
+		/// <summary>Called every frame when the button is held.</summary>
 		public event InteractableEventHandler ButtonStay = delegate { };
+		/// <summary>Called every fixed update when the button is held.</summary>
 		public event InteractableEventHandler ButtonFixedStay = delegate { };
+		/// <summary>Called when the state of the button has changed. (e.g released/pressed)</summary>
 		public event ValueChangeHandler ButtonStateChange = delegate { };
 
 		//Backend variables
 		private ButtonState _buttonState = ButtonState.Released;
+		/// <summary>If the button is being pressed down or released.</summary>
 		internal ButtonState ButtonState
 		{
 			get
@@ -66,10 +81,31 @@ namespace JulyJam.Interactables
 		// Methods called internally when the events are sent. 
 		// While these technically aren't necessary they make the development a lot simpler.
 		// Simply override these methods to add functionality without having to subscribe/unsubscribe in the children.
+		/// <summary>
+		/// Called when the button is pressed down.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Button_ButtonDown(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the button is released.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Button_ButtonUp(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called every fixed update when the button is held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Button_ButtonFixedStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when every frame while the button is being held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Button_ButtonStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the state of the button has changed. (e.g released/pressed)
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
+		/// <param name="value">The new button state. (Cast object to a ButtonState)</param>
 		internal virtual void Button_ButtonStateChange(MonoBehaviour sender, object value) { }
 		#endregion
 
@@ -119,7 +155,7 @@ namespace JulyJam.Interactables
 	public abstract class ToggleButton : Button
 	{
 		/// <summary>
-		/// The raw 0-1 value of the button. Will NOT be inverted.
+		/// The raw 0-1 value of the button. NOTE: Will NOT be inverted.
 		/// </summary>
 		public bool RawSignal { get; set; }
 		/// <summary>
@@ -142,7 +178,7 @@ namespace JulyJam.Interactables
 	public abstract class HoldButton : Button
 	{
 		/// <summary>
-		/// The raw 0-1 value of the button being pused down or not. Will NOT be inverted.
+		/// The raw 0-1 value of the button being pused down or not. NOTE: Will NOT be inverted.
 		/// </summary>
 		public bool RawSignal => ButtonState == ButtonState.Pressed;
 		/// <summary>
@@ -153,24 +189,43 @@ namespace JulyJam.Interactables
 	#endregion
 
 	#region Sliders
+	/// <summary>
+	/// The possible interaction states of the slider.
+	/// </summary>
 	public enum SliderState { Idle, Snapping, Grabbing }
+	/// <summary>
+	/// The different ways that the slider will snap to a value, if at all.
+	/// </summary>
 	public enum SliderSnappingBehavior { None, ToTarget, ToRoundedValue, OnAndOff }
 
 	/// <summary>
-	/// The most abstract layer of a slider interactable. Every single slider will have these properties.
+	/// The most abstract layer of a slider interactable. 
+	/// Every single slider will have these properties.
+	/// When designing sliders you should likely inherit from UnidirectionSlider or BidirectionSlider instead.
 	/// </summary>
 	public abstract class Slider : MonoBehaviour
 	{
 		//Events
+		/// <summary>Called when the slider has been grabbed.</summary>
 		public event InteractableEventHandler GrabStart = delegate { };
+		/// <summary>Called when the slider has been released.</summary>
 		public event InteractableEventHandler GrabEnd = delegate { };
+		/// <summary>Called every frame while the slider is being held.</summary>
 		public event InteractableEventHandler GrabStay = delegate { };
+		/// <summary>Called every fixed update while the slider is being held.</summary>
 		public event InteractableEventHandler GrabFixedStay = delegate { };
+		/// <summary>Called when the interaction state of the slider has changed.</summary>
 		public event ValueChangeHandler GrabStateChange = delegate { };
+		/// <summary>Called when the output value of the slider has changed.</summary>
 		public event ValueChangeHandler ValueChange = delegate { };
+
+		private const float TriggerInputThreshold = 0.6f;
 
 		//Backend variables
 		private SliderState _sliderState = SliderState.Snapping;
+		/// <summary>
+		/// The interaction state of the slider.
+		/// </summary>
 		internal SliderState SliderState
 		{
 			get
@@ -183,8 +238,14 @@ namespace JulyJam.Interactables
 				GrabStateChange(this, value);
 			}
 		}
+		/// <summary>
+		/// The hand that is currently holding the slider.
+		/// </summary>
 		internal TargetHand SliderHand { get; set; } = TargetHand.None;
 		private float _rawValue;
+		/// <summary>
+		/// The uninterpreted value of the slider. Limited between -1 and 1.
+		/// </summary>
 		internal float RawValue
 		{
 			get
@@ -200,8 +261,8 @@ namespace JulyJam.Interactables
 		}
 
 		//Properties
-		internal bool LeftTriggerHeld => Input.GetAxis("LeftTrigger") > 0.6f;
-		internal bool RightTriggerHeld => Input.GetAxis("RightTrigger") > 0.6f;
+		internal bool LeftTriggerHeld => Input.GetAxis("LeftTrigger") > TriggerInputThreshold;
+		internal bool RightTriggerHeld => Input.GetAxis("RightTrigger") > TriggerInputThreshold;
 
 		//Public attributes
 		[Header("Visuals")]
@@ -243,11 +304,37 @@ namespace JulyJam.Interactables
 			ValueChange -= Slider_ValueChange;
 		}
 
+		/// <summary>
+		/// Called when the slider has been grabbed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Slider_GrabStart(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the slider has been released.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Slider_GrabEnd(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called every frame while the slider is being held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Slider_GrabStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called every fixed update while the slider is being held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Slider_GrabFixedStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the interaction state of the slider has changed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
+		/// <param name="value">The SliderState of the slider.</param>
 		internal virtual void Slider_GrabStateChange(MonoBehaviour sender, object value) { }
+		/// <summary>
+		/// Called when the value of the slider has changed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
+		/// <param name="value">The float value of the lever.</param>
 		internal virtual void Slider_ValueChange(MonoBehaviour sender, object value) { }
 		#endregion
 
@@ -296,16 +383,21 @@ namespace JulyJam.Interactables
 			{
 				if (other.gameObject.CompareTag("Left Hand") && LeftTriggerHeld)
 				{
-					StartCoroutine(StartGrab(TargetHand.Left, other.gameObject));
+					StartCoroutine(StartGrab(TargetHand.Left, other.transform));
 				}
 				else if (other.gameObject.CompareTag("Right Hand") && RightTriggerHeld)
 				{
-					StartCoroutine(StartGrab(TargetHand.Right, other.gameObject));
+					StartCoroutine(StartGrab(TargetHand.Right, other.transform));
 				}
 			}
 		}
 
-		internal IEnumerator StartGrab(TargetHand hand, GameObject target)
+		/// <summary>
+		/// Initiates a grab of the slider, allowing it to be manipulated as long as the trigger is held.
+		/// </summary>
+		/// <param name="hand">The hand to check the trigger of.</param>
+		/// <param name="target">The target transform to track the position of.</param>
+		internal IEnumerator StartGrab(TargetHand hand, Transform target)
 		{
 			SliderState = SliderState.Grabbing;
 			SliderHand = hand;
@@ -314,7 +406,7 @@ namespace JulyJam.Interactables
 			while ((hand == TargetHand.Left && LeftTriggerHeld) || (hand == TargetHand.Right && RightTriggerHeld))
 			{
 				//Scale the value down to a usable value for the raw value of the lever.
-				RawValue = Mathf.Clamp(DistanceDotProduct(target.transform, transform.parent, transform.parent.forward) * sensitivity, -1, 1);
+				RawValue = Mathf.Clamp(DistanceDotProduct(target, transform.parent, transform.parent.forward) * sensitivity, -1, 1);
 
 				yield return null;
 			}
@@ -333,22 +425,26 @@ namespace JulyJam.Interactables
 		/// <returns>The distance target is from source in the specified direction.</returns>
 		public static float DistanceDotProduct(Transform target, Transform source, Vector3 direction)
 		{
-			//Get the controller position relative to the parent of the grabber and rotate it to be affected by the parent rotation.
+			//Get the controller position offset relative to the parent of the grabber and rotate it to be affected by the parent rotation.
 			Vector3 localPosition = source.rotation * source.InverseTransformPoint(target.position);
 
 			//Get how far the controller is in the specified direction directon.
 			return Vector3.Dot(localPosition, direction);
 		}
 
+		/// <summary>
+		/// Sets the rotation of the slider to the current value of the slider.
+		/// </summary>
 		internal void RefreshSliderPosition()
 		{
 			transform.localEulerAngles = new Vector3(Mathf.Clamp(RawValue, -1, 1) * maxRotation, 0, 0);
 		}
 
 		/// <summary>
-		/// Moves the value of the slider to the value at the rate set by snapping speed. If the difference is neglible will snap directly to the target value and set the state to idle.
+		/// Moves the value of the slider to the value at the rate set by snapping speed. 
+		/// If the difference is neglible will snap directly to the target value and set the state to idle.
 		/// </summary>
-		/// <param name="value">Target value</param>
+		/// <param name="value">The value to move towards.</param>
 		internal void SnapOverTime(float value)
 		{
 			RawValue = Mathf.Lerp(RawValue, value, snappingSpeed);
@@ -356,7 +452,7 @@ namespace JulyJam.Interactables
 		}
 
 		/// <summary>
-		/// Sets the value to the snapping target and sets the state to idle.
+		/// Immediately sets the value of the slider to the target value and sets the state to idle.
 		/// </summary>
 		internal void SnapInstantly(float value)
 		{
@@ -370,8 +466,20 @@ namespace JulyJam.Interactables
 	/// </summary>
 	public abstract class UnidirectionSlider : Slider
 	{
+		[Header("Unidirectional Slider")]
+		[Tooltip("The value the slider must be greater than to output as active.")]
+		[Range(0.1f, 0.9f)]
+		public float activeThreshold = 0.75f;
+
+		/// <summary>
+		/// The output value of the slider from 0 to 1.
+		/// </summary>
 		public float Output => Mathf.Clamp((RawValue + 1) / 2, 0, 1);
-		public bool Active => Output >= 0.75f;
+
+		/// <summary>
+		/// True when the output value is greater than the active threshold, otherwise false.
+		/// </summary>
+		public bool Active => Output >= activeThreshold;
 	}
 
 	/// <summary>
@@ -379,26 +487,49 @@ namespace JulyJam.Interactables
 	/// </summary>
 	public abstract class BidirectionSlider : Slider
 	{
+		/// <summary>
+		/// The output value of the slider from -1 to 1.
+		/// </summary>
 		public float Output => Mathf.Clamp(RawValue, -1, 1);
 	}
 	#endregion
 
 	#region Joystick
+	/// <summary>
+	/// The possible interaction states for the joystick.
+	/// </summary>
 	public enum JoystickState { Idle, Snapping, Grabbing }
+	/// <summary>
+	/// The possible snapping behaviors for the joystick, if any.
+	/// </summary>
 	public enum JoystickSnappingBehavior { Disabled, ToCenter }
 
+	/// <summary>
+	/// The most abstract layer of joystick interactable.
+	/// </summary>
 	public abstract class Joystick : MonoBehaviour
 	{
 		//Events
+		/// <summary>Called when the slider has been grabbed.</summary>
 		public event InteractableEventHandler GrabStart = delegate { };
+		/// <summary>Called when the slider has been released.</summary>
 		public event InteractableEventHandler GrabEnd = delegate { };
+		/// <summary>Called every frame while the slider is being held.</summary>
 		public event InteractableEventHandler GrabStay = delegate { };
+		/// <summary>Called every fixed update while the slider is being held.</summary>
 		public event InteractableEventHandler GrabFixedStay = delegate { };
+		/// <summary>Called when the interaction state of the slider has changed.</summary>
 		public event ValueChangeHandler GrabStateChange = delegate { };
+		/// <summary>Called when the output value of the slider has changed.</summary>
 		public event ValueChangeHandler ValueChange = delegate { };
+
+		private const float TriggerInputThreshold = 0.6f;
 
 		//Backend variables
 		private JoystickState _joystickState = JoystickState.Snapping;
+		/// <summary>
+		/// The interactable state of the joystick.
+		/// </summary>
 		internal JoystickState JoystickState
 		{
 			get
@@ -411,8 +542,14 @@ namespace JulyJam.Interactables
 				GrabStateChange(this, value);
 			}
 		}
+		/// <summary>
+		/// The hand that the joystick is currently keeping track of.
+		/// </summary>
 		internal TargetHand JoystickHand { get; set; } = TargetHand.None;
 		private Vector2 _rawValue;
+		/// <summary>
+		/// The uninterpreted value of the joystick.
+		/// </summary>
 		internal Vector2 RawValue
 		{
 			get
@@ -428,8 +565,8 @@ namespace JulyJam.Interactables
 		}
 
 		//Properties
-		internal bool LeftTriggerHeld => Input.GetAxis("LeftTrigger") > 0.6f;
-		internal bool RightTriggerHeld => Input.GetAxis("RightTrigger") > 0.6f;
+		internal bool LeftTriggerHeld => Input.GetAxis("LeftTrigger") > TriggerInputThreshold;
+		internal bool RightTriggerHeld => Input.GetAxis("RightTrigger") > TriggerInputThreshold;
 
 		//Public attributes
 		[Header("Visuals")]
@@ -468,11 +605,37 @@ namespace JulyJam.Interactables
 			ValueChange -= Joystick_ValueChange;
 		}
 
+		/// <summary>
+		/// Called when the joystick has been grabbed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Joystick_GrabStart(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the joystick has been released.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Joystick_GrabEnd(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called every frame while the joystick is being held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Joystick_GrabStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called every fixed update while the joystick is being held.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
 		internal virtual void Joystick_GrabFixedStay(MonoBehaviour sender) { }
+		/// <summary>
+		/// Called when the interaction state of the joystick has changed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
+		/// <param name="value">The JoystickState of the joystick.</param>
 		internal virtual void Joystick_GrabStateChange(MonoBehaviour sender, object value) { }
+		/// <summary>
+		/// Called when the value of the slider has changed.
+		/// </summary>
+		/// <param name="sender">The monobehavior that sent the event. Since the button itself sends out the event this is equivalent to using 'this' keyword.</param>
+		/// <param name="value">The Vector2 value of the joystick.</param>
 		internal virtual void Joystick_ValueChange(MonoBehaviour sender, object value) { }
 		#endregion
 
@@ -515,16 +678,21 @@ namespace JulyJam.Interactables
 			{
 				if (other.gameObject.CompareTag("Left Hand") && LeftTriggerHeld)
 				{
-					StartCoroutine(StartGrab(TargetHand.Left, other.gameObject));
+					StartCoroutine(StartGrab(TargetHand.Left, other.transform));
 				}
 				else if (other.gameObject.CompareTag("Right Hand") && RightTriggerHeld)
 				{
-					StartCoroutine(StartGrab(TargetHand.Right, other.gameObject));
+					StartCoroutine(StartGrab(TargetHand.Right, other.transform));
 				}
 			}
 		}
 
-		internal IEnumerator StartGrab(TargetHand hand, GameObject target)
+		/// <summary>
+		/// Initiates a grab of the slider, allowing it to be manipulated as long as the trigger is held.
+		/// </summary>
+		/// <param name="hand">The hand to check the trigger of.</param>
+		/// <param name="target">The target transform to track the position of.</param>
+		internal IEnumerator StartGrab(TargetHand hand, Transform target)
 		{
 			JoystickState = JoystickState.Grabbing;
 			JoystickHand = hand;
@@ -533,8 +701,8 @@ namespace JulyJam.Interactables
 			while ((hand == TargetHand.Left && LeftTriggerHeld) || (hand == TargetHand.Right && RightTriggerHeld))
 			{
 				//Scale the value down to a usable value for the raw value of the lever.
-				float x = Slider.DistanceDotProduct(target.transform, transform.parent, transform.parent.forward) * sensitivity;
-				float y = Slider.DistanceDotProduct(target.transform, transform.parent, transform.parent.right) * sensitivity;
+				float x = Slider.DistanceDotProduct(target, transform.parent, transform.parent.forward) * sensitivity;
+				float y = Slider.DistanceDotProduct(target, transform.parent, transform.parent.right) * sensitivity;
 				RawValue = new Vector2(x, y).normalized;
 
 				yield return null;
@@ -545,6 +713,9 @@ namespace JulyJam.Interactables
 			GrabEnd(this);
 		}
 
+		/// <summary>
+		/// Sets the rotation of the joystick to the current value of the joystick.
+		/// </summary>
 		internal void RefreshJoystickPosition()
 		{
 			transform.localEulerAngles = new Vector3(Mathf.Clamp(RawValue.x, -1, 1) * maxRotation, 0, Mathf.Clamp(RawValue.y, -1, 1) * -maxRotation);
@@ -553,7 +724,7 @@ namespace JulyJam.Interactables
 		/// <summary>
 		/// Moves the value of the joystick to the value at the rate set by snapping speed. If the difference is neglible will snap directly to the target value and set the state to idle.
 		/// </summary>
-		/// <param name="value">Target value</param>
+		/// <param name="value">Value to move towards.</param>
 		internal void SnapOverTime(Vector2 value)
 		{
 			RawValue = Vector2.Lerp(RawValue, value, snappingSpeed);
@@ -561,8 +732,9 @@ namespace JulyJam.Interactables
 		}
 
 		/// <summary>
-		/// Sets the value to the snapping target and sets the state to idle.
+		/// Immediately sets the value of the joystick and sets the state to idle.
 		/// </summary>
+		/// <param name="value">The value to set.</param>
 		internal void SnapInstantly(Vector2 value)
 		{
 			RawValue = value;
