@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.10980393, g: 0.15294118, b: 0.21568629, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.31
@@ -10639,7 +10639,7 @@ Light:
   serializedVersion: 9
   m_Type: 1
   m_Color: {r: 0.41651833, g: 0.63596207, b: 0.735849, a: 1}
-  m_Intensity: 0.07
+  m_Intensity: 2.21
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -10681,7 +10681,7 @@ Light:
   m_Lightmapping: 4
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
+  m_BounceIntensity: 5.82
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
