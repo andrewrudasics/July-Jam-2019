@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class ToggleButtonExample : ToggleButton
 {
+	[Header("Example")]
 	public GameObject target;
 
 	internal override void Button_ButtonStateChange(MonoBehaviour sender, object value)
