@@ -28,6 +28,6 @@ public class DebugMouseLook : MonoBehaviour
         rotX = Mathf.Clamp(rotX, -clampAngle, clampAngle);
 
         Quaternion localRotation = Quaternion.Euler(rotX, rotY, 0.0f);
-        transform.rotation = localRotation;
+        transform.localRotation = localRotation;
     }
 }
