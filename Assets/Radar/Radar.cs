@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class Radar : MonoBehaviour
 {
     public bool Debug;
@@ -20,10 +19,6 @@ public class Radar : MonoBehaviour
 
     void Update()
     {
-        if (!Application.isPlaying) {
-            mat = GetComponent<Renderer>().sharedMaterial;
-        }
-
         if (mat != null && origin != null && blip != null)
         {
             Vector3 location = blip.transform.position - origin.transform.position;
