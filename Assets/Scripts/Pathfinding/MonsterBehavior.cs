@@ -15,6 +15,10 @@ public class MonsterBehavior : MonoBehaviour
     private PathfindingNode currentNodeTarget;
     private PathfindingNode lastTarget;
 
+    [Header("Movement")]
+    public float patrolSpeed = 3;
+    public float chaseSpeed = 5;
+
     [Header("Player Visibility Settings")]
     public LayerMask seeableObject;
     public GameObject player;
@@ -111,8 +115,7 @@ public class MonsterBehavior : MonoBehaviour
 
     // uses the nav mesh to pick nieghboring location nodes and travel between them.
     IEnumerator PatrollingBehavior() {
-        lastPlayerLocation = Vector3.one * -10000;
-        agent.speed = 2;
+        agent.speed = patrolSpeed;
         // if the path has been reset
         float closestDistance = Mathf.Infinity;
         if (currentNodeTarget == null) {
@@ -150,7 +153,7 @@ public class MonsterBehavior : MonoBehaviour
     {
         if (player != null) {
             currentNodeTarget = null;
-            agent.speed = 3;
+            agent.speed = chaseSpeed;
             agent.SetDestination(player.transform.position);
             lastPlayerLocation = player.transform.position;
         }
