@@ -15,6 +15,10 @@ public class MonsterBehavior : MonoBehaviour
     private PathfindingNode currentNodeTarget;
     private PathfindingNode lastTarget;
 
+    [Header("Movement")]
+    public float patrolSpeed = 3;
+    public float chaseSpeed = 5;
+
     [Header("Player Visibility Settings")]
     public LayerMask seeableObject;
     public GameObject player;
@@ -31,20 +35,23 @@ public class MonsterBehavior : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         pfNodes = FindObjectsOfType<PathfindingNode>();
-        TreeNode chasing = new LeafNode(PlayerSeenTest, ChasingBehavior, defaultFailure);
-        TreeNode patroling = new LeafNode(AlwaysTrue, PatrollingBehavior, defaultFailure);
-        TreeNode listening = new LeafNode(PlayerHeardTest, defaultSuccess, defaultFailure);
-        TreeNode searching = new LeafNode(AtTargetLocation, defaultSuccess, defaultFailure);
+        TreeNode chasing = new LeafNode(PlayerSeenTest, ChasingBehavior, DefaultFailureBehavior);
+        TreeNode patroling = new LeafNode(AlwaysTrue, PatrollingBehavior, DefaultFailureBehavior);
+        TreeNode listening = new LeafNode(PlayerHeardTest, DefaultSuccessBehavior, DefaultFailureBehavior);
+        TreeNode searching = new LeafNode(AtTargetLocation, DefaultSuccessBehavior, DefaultFailureBehavior);
         TreeNode root = new SelectorNode(new TreeNode[4] { chasing, listening, searching, patroling });
-        
-        
+              
         tree = new BT(root);
         StartCoroutine(tree.Tick());
     }
 
+    // Tests
+
+    // checks if the player is within  "listeningDistance" of the monster
+    // if it is, returns true and sets the lastPlayerLoction to the players current location
+    //TODO: the rigidbody velocity test is mostly for debug. redo when a more definitive system is found
     IEnumerator PlayerHeardTest(Action<BTEvaluationResult> callback) {
         Vector3 toPlayerVec = player.transform.position - transform.position;
-        //TODO: the rigidbody test is mostly for debug. redo when a more definitive system is found
         if (toPlayerVec.magnitude < listeningDistance && player.GetComponent<Rigidbody>().velocity.magnitude > 1)
         {
             agent.SetDestination(transform.position);
@@ -58,6 +65,7 @@ public class MonsterBehavior : MonoBehaviour
 
     }
 
+    // checks if the players is visible to the monsters (within vision cone and in sight)
     IEnumerator PlayerSeenTest(Action<BTEvaluationResult> callback)
     {
         Vector3 toPlayerVec = player.transform.position - transform.position;
@@ -68,7 +76,6 @@ public class MonsterBehavior : MonoBehaviour
             if (hit.transform.gameObject == player 
                     && (Vector3.Angle(transform.forward, toPlayerVec) < sightAngle / 2 
                     && Vector3.Distance(player.transform.position, transform.position) < sightDistance))  {
-                lastPlayerLocation = player.transform.position;
                 callback(BTEvaluationResult.Success);
                 yield break;
             }
@@ -77,17 +84,16 @@ public class MonsterBehavior : MonoBehaviour
         yield return null;
     }
 
+    // checks if the monster is at the playerLastSeen location
     IEnumerator AtTargetLocation(Action<BTEvaluationResult> callback)
     {
         if (lastPlayerLocation != Vector3.one * -10000 && agent.remainingDistance > agent.stoppingDistance)
         {
-            agent.SetDestination(lastPlayerLocation);
             callback(BTEvaluationResult.Success);
             yield break;
         }
         else
         {
-            lastPlayerLocation = Vector3.one * -10000;
             callback(BTEvaluationResult.Continue);
             yield return null;
         }
@@ -105,8 +111,11 @@ public class MonsterBehavior : MonoBehaviour
         yield return null;
     }
 
+    // Behaviors
+
+    // uses the nav mesh to pick nieghboring location nodes and travel between them.
     IEnumerator PatrollingBehavior() {
-        agent.speed = 2;
+        agent.speed = patrolSpeed;
         // if the path has been reset
         float closestDistance = Mathf.Infinity;
         if (currentNodeTarget == null) {
@@ -144,19 +153,20 @@ public class MonsterBehavior : MonoBehaviour
     {
         if (player != null) {
             currentNodeTarget = null;
-            agent.speed = 3;
+            agent.speed = chaseSpeed;
             agent.SetDestination(player.transform.position);
+            lastPlayerLocation = player.transform.position;
         }
 
         yield return null;
     }
 
-    IEnumerator defaultSuccess()
+    IEnumerator DefaultSuccessBehavior()
     {
         yield return null;
     }
 
-    IEnumerator defaultFailure()
+    IEnumerator DefaultFailureBehavior()
     {
         yield return null;
     }
@@ -182,7 +192,6 @@ public class MonsterBehavior : MonoBehaviour
 
             if (Physics.Raycast(transform.position, toPlayerVec.normalized, out hit, sightDistance, seeableObject))
             {
-                print(hit.transform.gameObject);
                 if (hit.transform.gameObject == player 
                         && Vector3.Angle(transform.forward, toPlayerVec) < sightAngle / 2 
                         && Vector3.Distance(player.transform.position, transform.position) < sightDistance) {
