@@ -21,7 +21,7 @@ public class MonsterBehavior : MonoBehaviour
 
     [Header("Player Visibility Settings")]
     public LayerMask seeableObject;
-    public GameObject player;
+    public SubmarineControls player;
     public float sightDistance;
     public float sightAngle = 45;
 
@@ -73,7 +73,8 @@ public class MonsterBehavior : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(transform.position, toPlayerVec.normalized, out hit, sightDistance, seeableObject)) { 
 
-            if (hit.transform.gameObject == player 
+            if (hit.transform.gameObject == player.gameObject
+                    && player.subOn
                     && (Vector3.Angle(transform.forward, toPlayerVec) < sightAngle / 2 
                     && Vector3.Distance(player.transform.position, transform.position) < sightDistance))  {
                 callback(BTEvaluationResult.Success);
