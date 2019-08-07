@@ -19,6 +19,16 @@ public class SubmarineControls : MonoBehaviour
     private bool subOn = true;
     private Rigidbody rigid;
 
+    [Header("Controls")]
+    public float horiz;
+    public float vert;
+    public bool thrust;
+
+    public void setAxis(Vector2 axis) {
+        horiz = axis.y;
+        vert = axis.x;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -28,9 +38,9 @@ public class SubmarineControls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float horiz = Input.GetAxis("Horizontal");
-        float vert = Input.GetAxis("Vertical");
-        bool thrust = Input.GetKey(KeyCode.Space);
+        //horiz = Input.GetAxis("Horizontal");
+        //vert = Input.GetAxis("Vertical");
+        //thrust = Input.GetKey(KeyCode.Space);
 
         if (Input.GetKeyDown(KeyCode.P)) {
             TurnOnSub(!subOn);
@@ -67,5 +77,10 @@ public class SubmarineControls : MonoBehaviour
         else {
             turnOffEngine.Invoke();
         }
+    }
+
+    public void OnOffThrust(bool on)
+    {
+        thrust = on;
     }
 }
