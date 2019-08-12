@@ -7,7 +7,7 @@ namespace JulyJam.Interactables
 	public delegate void InteractableEventHandler(MonoBehaviour sender);
 	public delegate void ValueChangeHandler(MonoBehaviour sender, object value);
 	/// <summary>
-	/// The possibles hands that are being tracked by an interactable.
+	/// The target hand that is being tracked by an interactable.
 	/// </summary>
 	public enum TargetHand { None, Right, Left }
 
@@ -175,6 +175,7 @@ namespace JulyJam.Interactables
 	/// <summary>
 	/// A button which only sends a signal when pushed down.
 	/// </summary>
+	[DisallowMultipleComponent]
 	public abstract class HoldButton : Button
 	{
 		/// <summary>
@@ -198,6 +199,7 @@ namespace JulyJam.Interactables
 	/// </summary>
 	public enum SliderSnappingBehavior { None, ToTarget, ToRoundedValue, OnAndOff }
 
+	[DisallowMultipleComponent]
 	/// <summary>
 	/// The most abstract layer of a slider interactable. 
 	/// Every single slider will have these properties.
@@ -438,6 +440,7 @@ namespace JulyJam.Interactables
 		internal void RefreshSliderPosition()
 		{
 			transform.localEulerAngles = new Vector3(Mathf.Clamp(RawValue, -1, 1) * maxRotation, 0, 0);
+			//TODO: transform.rotation = Quaternion.LookRotation();
 		}
 
 		/// <summary>
@@ -507,6 +510,7 @@ namespace JulyJam.Interactables
 	/// <summary>
 	/// The most abstract layer of joystick interactable.
 	/// </summary>
+	[DisallowMultipleComponent]
 	public abstract class Joystick : MonoBehaviour
 	{
 		//Events
@@ -558,7 +562,7 @@ namespace JulyJam.Interactables
 			}
 			set
 			{
-				_rawValue = value.normalized;
+				_rawValue = value;
 				ValueChange(this, _rawValue);
 				RefreshJoystickPosition();
 			}
@@ -701,9 +705,9 @@ namespace JulyJam.Interactables
 			while ((hand == TargetHand.Left && LeftTriggerHeld) || (hand == TargetHand.Right && RightTriggerHeld))
 			{
 				//Scale the value down to a usable value for the raw value of the lever.
-				float x = Slider.DistanceDotProduct(target, transform.parent, transform.parent.forward) * sensitivity;
-				float y = Slider.DistanceDotProduct(target, transform.parent, transform.parent.right) * sensitivity;
-				RawValue = new Vector2(x, y).normalized;
+				float x = Mathf.Clamp(Slider.DistanceDotProduct(target, transform.parent, transform.parent.forward) * sensitivity, -1, 1);
+				float y = Mathf.Clamp(Slider.DistanceDotProduct(target, transform.parent, transform.parent.right) * sensitivity, -1, 1);
+				RawValue = new Vector2(x, y);
 
 				yield return null;
 			}
@@ -718,7 +722,7 @@ namespace JulyJam.Interactables
 		/// </summary>
 		internal void RefreshJoystickPosition()
 		{
-			transform.localEulerAngles = new Vector3(Mathf.Clamp(RawValue.x, -1, 1) * maxRotation, 0, Mathf.Clamp(RawValue.y, -1, 1) * -maxRotation);
+			transform.localEulerAngles = new Vector3(RawValue.x * maxRotation, 0, RawValue.y * -maxRotation);
 		}
 
 		/// <summary>
